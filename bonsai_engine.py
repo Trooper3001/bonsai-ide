@@ -20,8 +20,12 @@ import json
 import pathlib
 import shutil
 import subprocess
+import sys
 import urllib.error
 import urllib.request
+
+# On Windows 'python3' may not exist — use the current interpreter as fallback
+_PY = "python3" if shutil.which("python3") else sys.executable
 
 IM_START = "<|im_start|>"
 IM_END   = "<|im_end|>"
@@ -46,7 +50,7 @@ FIM_STOPS  = ["<|endoftext|>", "<|fim_pad|>", FIM_PREFIX, FIM_SUFFIX, FIM_MIDDLE
 # "check" (optional) is a fast syntax-only command. Python is special-cased in
 # _lang_check for in-process, line-precise errors.
 LANGS = {
-    ".py":   {"name": "Python",     "run": ["python3", "{file}"]},
+    ".py":   {"name": "Python",     "run": [_PY, "{file}"]},
     ".js":   {"name": "JavaScript", "run": ["node", "{file}"],     "check": ["node", "--check", "{file}"]},
     ".mjs":  {"name": "JavaScript", "run": ["node", "{file}"],     "check": ["node", "--check", "{file}"]},
     ".sh":   {"name": "Shell",      "run": ["bash", "{file}"],     "check": ["bash", "-n", "{file}"]},
@@ -636,13 +640,30 @@ class BonsaiEngine:
                 q = args.get("query", "")
                 if not q:
                     return "Error: empty query."
-                r = subprocess.run(
-                    ["grep", "-rn", "--exclude-dir=.git", "-I", q, "."],
-                    cwd=self.workspace, capture_output=True, text=True, timeout=20,
-                )
-                out = r.stdout.strip()
-                lines = out.splitlines()[:40]
-                return "\n".join(lines) or "(no matches)"
+                # Try grep first (Linux/Mac/WSL); fall back to pure-Python search on Windows
+                try:
+                    r = subprocess.run(
+                        ["grep", "-rn", "--exclude-dir=.git", "-I", q, "."],
+                        cwd=self.workspace, capture_output=True, text=True, timeout=20,
+                    )
+                    out = r.stdout.strip()
+                    lines = out.splitlines()[:40]
+                    return "\n".join(lines) or "(no matches)"
+                except FileNotFoundError:
+                    import re as _re
+                    results, pat = [], _re.compile(_re.escape(q), _re.IGNORECASE)
+                    skip = self.SKIP_DIRS | {".git"}
+                    for p in sorted(self.workspace.rglob("*")):
+                        if not p.is_file(): continue
+                        if any(part in skip for part in p.relative_to(self.workspace).parts): continue
+                        try:
+                            for i, ln in enumerate(p.read_text(errors="replace").splitlines(), 1):
+                                if pat.search(ln):
+                                    results.append(f"{p.relative_to(self.workspace)}:{i}:{ln.strip()[:120]}")
+                                    if len(results) >= 40: break
+                        except Exception: continue
+                        if len(results) >= 40: break
+                    return "\n".join(results) or "(no matches)"
 
             if name == "web_search":
                 try:
@@ -1021,7 +1042,7 @@ class BonsaiEngine:
                  or r.endswith("_test.py")]
         if tests:
             try:
-                r = subprocess.run(["python3", "-m", "pytest", "-q"], cwd=self.workspace,
+                r = subprocess.run([_PY, "-m", "pytest", "-q"], cwd=self.workspace,
                                    capture_output=True, text=True, timeout=120)
                 out = (r.stdout + r.stderr)
                 if "No module named pytest" not in out and r.returncode != 5:
@@ -1033,7 +1054,7 @@ class BonsaiEngine:
             fails = []
             for t in tests:
                 try:
-                    rr = subprocess.run(["python3", t], cwd=self.workspace,
+                    rr = subprocess.run([_PY, t], cwd=self.workspace,
                                         capture_output=True, text=True, timeout=60)
                     if rr.returncode != 0:
                         fails.append(f"{t}: {(rr.stdout + rr.stderr).strip()[-400:]}")
@@ -1049,7 +1070,7 @@ class BonsaiEngine:
             mod = rel[:-3].replace("/", ".")
             try:
                 rr = subprocess.run(
-                    ["python3", "-c", f"import importlib; importlib.import_module('{mod}')"],
+                    [_PY, "-c", f"import importlib; importlib.import_module('{mod}')"],
                     cwd=self.workspace, capture_output=True, text=True, timeout=30)
                 if rr.returncode != 0:
                     last = (rr.stderr.strip().splitlines() or ["error"])[-1]
@@ -1067,7 +1088,7 @@ class BonsaiEngine:
             try:
                 src = (self.workspace / entry).read_text(errors="replace")
                 if "input(" not in src:
-                    rr = subprocess.run(["python3", entry], cwd=self.workspace,
+                    rr = subprocess.run([_PY, entry], cwd=self.workspace,
                                         capture_output=True, text=True, timeout=20)
                     out = (rr.stdout + rr.stderr).strip()
                     if rr.returncode != 0:
