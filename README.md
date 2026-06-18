@@ -11,7 +11,7 @@ No cloud. No API keys. Everything runs on your machine.
 
 This is an experiment in **how far a tiny 1-bit model can be pushed as a coding agent**.
 
-The AI behind the agent is **[Bonsai-8B](https://prismml.com/news/bonsai-8b)** by [PrismML](https://prismml.com) — the first commercially viable 1-bit LLM, trained from scratch with 1-bit weights across every layer (embeddings, attention, MLP, LM head). At ~1.1 GB it scores 70.5 avg on benchmarks, beating Llama 3.1 8B while being 14× smaller. On CPU it runs at ~4 tokens/second. Most people would write that off as too slow and too weak to be useful for coding. The goal here was to prove otherwise by engineering around its limitations:
+The AI behind the agent is **[Bonsai-8B](https://prismml.com/news/bonsai-8b)** by [PrismML](https://prismml.com) — the first commercially viable 1-bit LLM, trained from scratch with 1-bit weights across every layer (embeddings, attention, MLP, LM head). At ~1.1 GB it scores 70.5 avg on benchmarks, beating Llama 3.1 8B while being 14× smaller. On CPU it's slow (speed depends heavily on your hardware). Most people would write that off as too weak to be useful for coding. The goal here was to prove otherwise by engineering around its limitations:
 
 - **Staged pipeline** (analyze → research → plan → execute) so the model never has to do too many things at once
 - **10-tool editing toolkit** with surgical tools (`replace_lines`, `replace_function`, `rename_symbol`, `append_file`) so the model rarely needs to rewrite a whole file
