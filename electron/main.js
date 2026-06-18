@@ -14,6 +14,16 @@ const fs    = require("fs");
 
 const IS_WIN = process.platform === "win32";
 
+// Detect Python executable — Windows may have 'python' or 'py', not 'python3'
+function findPython() {
+  for (const candidate of ["python3", "python", "py"]) {
+    const r = spawnSync(candidate, ["--version"], { timeout: 3000 });
+    if (r.status === 0) return candidate;
+  }
+  return null;
+}
+const PYTHON = findPython();
+
 // Bundled IDE backend (inside the AppImage/exe under resources/backend/)
 const BACKEND = app.isPackaged
   ? path.join(process.resourcesPath, "backend")
@@ -207,9 +217,18 @@ function startKcpp(bin, model, port, cudaFlags) {
 }
 
 function startIDE(workspace) {
+  if (!PYTHON) throw new Error("Python not found. Install Python 3 from https://python.org and make sure to tick 'Add to PATH'.");
   const server = path.join(BACKEND, "server.py");
-  const p = spawn("python3", [server, workspace || os.homedir(), "--port", "3000"],
-                  { stdio: "ignore" });
+  const logFile = path.join(DATA, "ide.log");
+  const out = fs.openSync(logFile, "w");
+  const p = spawn(PYTHON, [server, workspace || os.homedir(), "--port", "3000"],
+                  { stdio: ["ignore", out, out] });
+  p.on("exit", (code) => {
+    if (code !== 0 && code !== null) {
+      const log = fs.existsSync(logFile) ? fs.readFileSync(logFile, "utf8").slice(-400) : "";
+      uiError(`IDE crashed (exit ${code}).\n\n${log}`);
+    }
+  });
   procs.push(p);
   return p;
 }
