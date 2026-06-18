@@ -12,25 +12,31 @@ const fs    = require("fs");
 
 // ── paths ─────────────────────────────────────────────────────────────────────
 
-// Bundled IDE backend (inside the AppImage under resources/backend/)
+const IS_WIN = process.platform === "win32";
+
+// Bundled IDE backend (inside the AppImage/exe under resources/backend/)
 const BACKEND = app.isPackaged
   ? path.join(process.resourcesPath, "backend")
   : path.join(__dirname, "..");   // dev: repo root
 
 // User data dir — models + KoboldCPP live here, persists between updates
-const DATA      = path.join(os.homedir(), ".bonsai-ide");
-const KCPP_DIR  = path.join(DATA, "koboldcpp");
+const DATA       = path.join(os.homedir(), ".bonsai-ide");
+const KCPP_DIR   = path.join(DATA, "koboldcpp");
 const MODELS_DIR = path.join(DATA, "models");
 
-const KCPP_BIN_CPU  = path.join(KCPP_DIR, "koboldcpp-linux-x64");
-const KCPP_BIN_CUDA = path.join(KCPP_DIR, "koboldcpp-linux-x64-cuda12");
+const KCPP_BIN_CPU  = path.join(KCPP_DIR, IS_WIN ? "koboldcpp.exe"      : "koboldcpp-linux-x64");
+const KCPP_BIN_CUDA = path.join(KCPP_DIR, IS_WIN ? "koboldcpp_cu12.exe" : "koboldcpp-linux-x64-cuda12");
 const MODEL_MAIN    = path.join(MODELS_DIR, "Bonsai-8B-Q1_0.gguf");
 const MODEL_FIM     = path.join(MODELS_DIR, "Qwen2.5-Coder-0.5B-Q8_0.gguf");
 
 // Download URLs
 const URLS = {
-  kcpp_cpu:   "https://github.com/LostRuins/koboldcpp/releases/latest/download/koboldcpp-linux-x64",
-  kcpp_cuda:  "https://github.com/LostRuins/koboldcpp/releases/latest/download/koboldcpp-linux-x64-cuda12",
+  kcpp_cpu:   IS_WIN
+    ? "https://github.com/LostRuins/koboldcpp/releases/latest/download/koboldcpp.exe"
+    : "https://github.com/LostRuins/koboldcpp/releases/latest/download/koboldcpp-linux-x64",
+  kcpp_cuda:  IS_WIN
+    ? "https://github.com/LostRuins/koboldcpp/releases/latest/download/koboldcpp_cu12.exe"
+    : "https://github.com/LostRuins/koboldcpp/releases/latest/download/koboldcpp-linux-x64-cuda12",
   model_main: "https://huggingface.co/prism-ml/Bonsai-8B-gguf/resolve/main/Bonsai-8B-Q1_0.gguf",
   model_fim:  "https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF/resolve/main/qwen2.5-coder-0.5b-instruct-q8_0.gguf",
 };
@@ -157,7 +163,7 @@ async function setup() {
   if (!fs.existsSync(kcppBin)) {
     ui(`Downloading KoboldCPP (${cuda ? "CUDA ⚡" : "CPU"})…`, 0);
     await download(kcppUrl, kcppBin, "KoboldCPP");
-    fs.chmodSync(kcppBin, 0o755);
+    if (!IS_WIN) fs.chmodSync(kcppBin, 0o755);
   }
 
   // Bonsai-8B main model
