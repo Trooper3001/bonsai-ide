@@ -1,0 +1,22 @@
+{
+  "name": "bonsai-ide",
+  "version": "0.1.0",
+  "description": "BonsAI IDE — local AI coding desktop client (Electron shell over the web IDE)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "dev.bonsai.ide",
+    "productName": "BonsAI IDE",
+    "files": ["main.js", "loading.html"],
+    "linux": { "target": ["AppImage"], "category": "Development" },
+    "win": { "target": ["nsis"] },
+    "mac": { "target": ["dmg"] }
+  }
+}

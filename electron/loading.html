@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: #1e1e1e; color: #cccccc;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; user-select: none;
+    }
+    .logo { font-size: 56px; animation: sway 3s ease-in-out infinite; }
+    h1 { font-weight: 300; letter-spacing: 1px; margin: 0; }
+    .sub { color: #858585; font-size: 13px; }
+    .bar { width: 220px; height: 3px; background: #333; border-radius: 2px; overflow: hidden; margin-top: 8px; }
+    .bar::before { content: ""; display: block; height: 100%; width: 40%;
+      background: #0e639c; animation: slide 1.4s ease-in-out infinite; }
+    @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+    @keyframes sway { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+  </style>
+</head>
+<body>
+  <div class="logo">🌳</div>
+  <h1>BonsAI IDE</h1>
+  <div class="sub">Starting the model and workspace… (first launch loads the model — give it a moment)</div>
+  <div class="bar"></div>
+</body>
+</html>
