@@ -27,6 +27,24 @@ import urllib.request
 # On Windows 'python3' may not exist — use the current interpreter as fallback
 _PY = "python3" if shutil.which("python3") else sys.executable
 
+# Shell to use for run_command. On Linux/Mac: None (shell=True uses /bin/sh).
+# On Windows: prefer Git Bash or WSL bash so the model's unix commands work;
+# fall back to cmd.exe if neither is installed.
+def _detect_shell():
+    if sys.platform != "win32":
+        return None
+    for candidate in [
+        "bash",                                          # WSL / Git Bash in PATH
+        r"C:\Program Files\Git\bin\bash.exe",
+        r"C:\Program Files (x86)\Git\bin\bash.exe",
+    ]:
+        found = shutil.which(candidate) or (candidate if __import__("os").path.exists(candidate) else None)
+        if found:
+            return found
+    return None  # fall back to cmd.exe via shell=True
+
+_SHELL = _detect_shell()  # None = use system default shell
+
 IM_START = "<|im_start|>"
 IM_END   = "<|im_end|>"
 # Pre-filled empty think block → model skips reasoning and answers directly.
@@ -887,10 +905,16 @@ class BonsaiEngine:
 
             if name == "run_command":
                 cmd = args.get("command", "")
-                r = subprocess.run(
-                    cmd, shell=True, cwd=self.workspace,
-                    capture_output=True, text=True, timeout=30,
-                )
+                if _SHELL:
+                    r = subprocess.run(
+                        [_SHELL, "-c", cmd], cwd=self.workspace,
+                        capture_output=True, text=True, timeout=30,
+                    )
+                else:
+                    r = subprocess.run(
+                        cmd, shell=True, cwd=self.workspace,
+                        capture_output=True, text=True, timeout=30,
+                    )
                 out = (r.stdout + r.stderr).strip()
                 if len(out) > 4000:
                     out = out[:4000] + "\n…[truncated]"
@@ -1122,8 +1146,14 @@ class BonsaiEngine:
 
     def _agent_base_system(self, allow_writes, context) -> str:
         """Shared system preamble: role + tools + worked example + workspace tree."""
+        shell_note = (
+            f"# Shell\nrun_command uses {'Git Bash (bash syntax works)' if _SHELL else 'the system shell'}."
+            + ("" if _SHELL or sys.platform != "win32"
+               else " WARNING: bash not found — you are on Windows cmd.exe. Use Windows commands (dir, type, copy) instead of bash commands (ls, cat, cp).")
+        )
         sp = (f"{self.AGENT_SYSTEM}\n\n{self._render_tools_block(allow_writes)}\n\n"
               f"{self.AGENT_EXAMPLE}\n\n"
+              f"{shell_note}\n\n"
               f"# Workspace files (paths relative to root)\n{self._workspace_tree()}")
         if context:
             sp += f"\n\n# Open in editor now\n{context[:1000]}"

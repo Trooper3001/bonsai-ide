@@ -21,7 +21,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from bonsai_engine import BonsaiEngine
+from bonsai_engine import BonsaiEngine, _SHELL
 
 FRONTEND_DIR = pathlib.Path(__file__).parent / "frontend"
 DEFAULT_PORT  = 3000
@@ -336,10 +336,16 @@ class IDEHandler(http.server.BaseHTTPRequestHandler):
             if not pathlib.Path(cwd_).exists():
                 cwd_ = str(self.workspace)
             try:
-                r = subprocess.run(
-                    cmd, shell=True, capture_output=True, text=True,
-                    timeout=30, cwd=cwd_,
-                )
+                if _SHELL:
+                    r = subprocess.run(
+                        [_SHELL, "-c", cmd], capture_output=True, text=True,
+                        timeout=30, cwd=cwd_,
+                    )
+                else:
+                    r = subprocess.run(
+                        cmd, shell=True, capture_output=True, text=True,
+                        timeout=30, cwd=cwd_,
+                    )
                 self.send_json({"stdout": r.stdout, "stderr": r.stderr, "code": r.returncode})
             except subprocess.TimeoutExpired:
                 self.send_json({"stdout": "", "stderr": "timed out", "code": -1})

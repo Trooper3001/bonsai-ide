@@ -51,6 +51,8 @@ If you swap in a Q4 or Q8 7B+ model the agent becomes noticeably more capable wi
 If the completion model (`:5002`) is not running, completions fall back to the 8B model.
 If the 8B model (`:5001`) is not running, the editor still works — AI features just show "offline".
 
+> **Windows note:** The agent and terminal use bash syntax (the model is trained on it). The app auto-detects Git Bash or WSL and uses it if present. Without either, commands fall back to `cmd.exe` and the agent may struggle. Install [Git for Windows](https://git-scm.com/download/win) (includes Git Bash) for the best experience.
+
 ---
 
 ## Quick start
