@@ -7,6 +7,25 @@ No cloud. No API keys. Everything runs on your machine.
 
 ---
 
+## What this project is really about
+
+This is an experiment in **how far a tiny 1-bit model can be pushed as a coding agent**.
+
+The AI behind the agent is **Bonsai-8B** — a 1-bit quantized Qwen3 8B model running at ~4 tokens/second on CPU. Most people would write that off as too slow and too weak to be useful. The goal here was to prove otherwise by engineering around its limitations:
+
+- **Staged pipeline** (analyze → research → plan → execute) so the model never has to do too many things at once
+- **10-tool editing toolkit** with surgical tools (`replace_lines`, `replace_function`, `rename_symbol`, `append_file`) so the model rarely needs to rewrite a whole file
+- **Automatic syntax checking** after every file write, with the exact broken line fed back so it can fix it with one `replace_lines` call
+- **System-enforced testing** — the agent can't declare success until its code actually runs clean
+- **Disconnect watchdog** + abort on client close so zombie generations don't pile up
+- **FIM completion** offloaded to a separate tiny Qwen2.5-Coder-0.5B model so the 8B isn't taxed by every keystroke
+
+The 1-bit model is the real ceiling — it can build working multi-file Python projects, refactor across files, and use web search to look up docs it doesn't know. It struggles with complex logic bugs and occasionally needs a nudge. Everything in the engine is built to get the most out of it.
+
+If you swap in a Q4 or Q8 7B+ model the agent becomes noticeably more capable with no other changes.
+
+---
+
 ## Features
 
 - **Editor** — Monaco (VS Code engine): syntax highlighting, tabs, minimap, Ctrl+P quick-open, in-files search, Ctrl+S save
