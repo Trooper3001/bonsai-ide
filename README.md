@@ -11,7 +11,7 @@ No cloud. No API keys. Everything runs on your machine.
 
 This is an experiment in **how far a tiny 1-bit model can be pushed as a coding agent**.
 
-The AI behind the agent is **Bonsai-8B** — a 1-bit quantized Qwen3 8B model running at ~4 tokens/second on CPU. Most people would write that off as too slow and too weak to be useful. The goal here was to prove otherwise by engineering around its limitations:
+The AI behind the agent is **[Bonsai-8B](https://prismml.com/news/bonsai-8b)** by [PrismML](https://prismml.com) — the first commercially viable 1-bit LLM, trained from scratch with 1-bit weights across every layer (embeddings, attention, MLP, LM head). At ~1.1 GB it scores 70.5 avg on benchmarks, beating Llama 3.1 8B while being 14× smaller. On CPU it runs at ~4 tokens/second. Most people would write that off as too slow and too weak to be useful for coding. The goal here was to prove otherwise by engineering around its limitations:
 
 - **Staged pipeline** (analyze → research → plan → execute) so the model never has to do too many things at once
 - **10-tool editing toolkit** with surgical tools (`replace_lines`, `replace_function`, `rename_symbol`, `append_file`) so the model rarely needs to rewrite a whole file
@@ -45,7 +45,7 @@ If you swap in a Q4 or Q8 7B+ model the agent becomes noticeably more capable wi
 - **[KoboldCPP](https://github.com/LostRuins/koboldcpp)** serving two models:
   | Model | Port | Purpose |
   |---|---|---|
-  | Bonsai-8B (1-bit Qwen3) | 5001 | Chat and agent |
+  | [Bonsai-8B](https://huggingface.co/prism-ml/Bonsai-8B-gguf) (PrismML 1-bit LLM) | 5001 | Chat and agent |
   | Qwen2.5-Coder-0.5B-Q8 | 5002 | Inline FIM completion *(optional)* |
 
 If the completion model (`:5002`) is not running, completions fall back to the 8B model.
@@ -64,14 +64,14 @@ Pick the CUDA build if you have an NVIDIA GPU, otherwise the CPU build.
 
 Download these GGUF files (e.g. from Hugging Face) into a `models/` folder:
 
-- `Bonsai-8B-1bit.gguf` — 1-bit Qwen3 8B (~1.1 GB)
+- `Bonsai-8B-Q1_0.gguf` — PrismML 1-bit LLM (~1.1 GB) — [download](https://huggingface.co/prism-ml/Bonsai-8B-gguf)
 - `Qwen2.5-Coder-0.5B-Q8_0.gguf` — FIM completion model (~0.5 GB, optional)
 
 ### 3. Start KoboldCPP
 
 ```bash
 # Chat / agent model on port 5001
-./koboldcpp Bonsai-8B-1bit.gguf --port 5001 --contextsize 32768 --kvquant q8_0
+./koboldcpp Bonsai-8B-Q1_0.gguf --port 5001 --contextsize 32768 --kvquant q8_0
 
 # Inline completion model on port 5002 (optional)
 ./koboldcpp Qwen2.5-Coder-0.5B-Q8_0.gguf --port 5002 --contextsize 4096
