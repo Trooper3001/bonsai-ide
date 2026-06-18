@@ -1,7 +1,7 @@
 # BonsAI IDE
 
 A lightweight, privacy-first web IDE with a built-in local AI coding assistant.
-No cloud. No API keys. Everything runs on your machine.
+No cloud. No API keys. Everything runs on your machine — **including on potato hardware**.
 
 **Stack:** Monaco editor · Python 3 stdlib backend · [KoboldCPP](https://github.com/LostRuins/koboldcpp) local inference
 

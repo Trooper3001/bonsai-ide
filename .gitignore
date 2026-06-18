@@ -3,7 +3,9 @@ __pycache__/
 *.pyo
 logs/
 node_modules/
+electron/node_modules/
 dist/
+electron/dist/
 .DS_Store
 *.gguf
 .env
