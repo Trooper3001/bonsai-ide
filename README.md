@@ -73,7 +73,7 @@ Download these GGUF files (e.g. from Hugging Face) into a `models/` folder:
 
 ```bash
 # Chat / agent model on port 5001
-./koboldcpp Bonsai-8B-Q1_0.gguf --port 5001 --contextsize 32768 --kvquant q8_0
+./koboldcpp Bonsai-8B-Q1_0.gguf --port 5001 --contextsize 32768 --quantkv q8_0
 
 # Inline completion model on port 5002 (optional)
 ./koboldcpp Qwen2.5-Coder-0.5B-Q8_0.gguf --port 5002 --contextsize 4096
